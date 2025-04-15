@@ -100,6 +100,7 @@ public class SecurityConfig {
                         .requestMatchers("/static/css/**", "/static/img/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
+                                "/error",
                                 "/v2/api-docs/**",
                                 "/v3/api-docs/**",
                                 "/swagger.json",
@@ -130,7 +131,7 @@ public class SecurityConfig {
                                 "/ownSecurity/signIn",
                                 "/ownSecurity/updatePassword")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, USER_LINK,
+                        .requestMatchers(HttpMethod.GET,
                                 "/user/shopping-list-items/habits/{habitId}/shopping-list",
                                 "/user/{userId}/{habitId}/custom-shopping-list-items/available",
                                 "/user/{userId}/profile/", "/user/isOnline/{userId}/",
@@ -177,6 +178,7 @@ public class SecurityConfig {
                                 "/user/markUserAsActivated")
                         .hasAnyRole(ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)
                         .requestMatchers(HttpMethod.GET,
+                                USER_LINK,
                                 "/user/get-all-authorities",
                                 "/user/get-positions-authorities",
                                 "/user/get-employee-login-positions")
@@ -191,6 +193,7 @@ public class SecurityConfig {
                                 "/user/shopping-list-items")
                         .hasAnyRole(USER, ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)
                         .requestMatchers(HttpMethod.GET,
+                                USER_LINK,
                                 "/user/all",
                                 "/user/roles",
                                 "/user/findUserForManagement",

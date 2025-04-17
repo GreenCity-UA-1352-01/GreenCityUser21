@@ -29,8 +29,7 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 class EmailServiceImplTest {
@@ -138,8 +137,9 @@ class EmailServiceImplTest {
 
     @Test
     void sendHabitNotification() {
-        service.sendHabitNotification("userName", "userEmail");
-        verify(javaMailSender).createMimeMessage();
+        assertThrows(NotFoundException.class, () ->
+                service.sendHabitNotification("userName", "userEmail"));
+        verify(javaMailSender, never()).createMimeMessage();
     }
 
     @Test

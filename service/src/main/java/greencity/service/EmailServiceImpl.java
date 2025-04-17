@@ -84,7 +84,11 @@ public class EmailServiceImpl implements EmailService {
         model.put(EmailConstants.STATUS, placeStatus);
 
         String template = createEmailTemplate(model, EmailConstants.CHANGE_PLACE_STATUS_EMAIL_PAGE);
-        sendEmail(authorEmail, EmailConstants.GC_CONTRIBUTORS, template);
+        NotificationDto notification = NotificationDto.builder()
+                .title(EmailConstants.GC_CONTRIBUTORS)
+                .body(template)
+                .build();
+        sendNotificationByEmail(notification, authorEmail);
     }
 
     @Override

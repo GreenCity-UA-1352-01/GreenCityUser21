@@ -246,7 +246,11 @@ public class EmailServiceImpl implements EmailService {
     public void sendHabitNotification(String name, String email) {
         String subject = "Notification about not marked habits";
         String content = "Dear " + name + ", you haven't marked any habit during last 3 days";
-        sendEmail(email, subject, content);
+        NotificationDto notification = NotificationDto.builder()
+            .title(subject)
+            .body(content)
+            .build();
+        sendNotificationByEmail(notification, email);
     }
 
     @Override

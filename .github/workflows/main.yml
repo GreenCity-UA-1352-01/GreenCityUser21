@@ -40,13 +40,23 @@ jobs:
 #         with:
 #           go-version: 1.18
 
-      - name: Run a multi-line script
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_USER }}
+      - name: Build with Maven
         run: |
           git fetch --unshallow
-          mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar -Dsonar.projectKey=GreenCity-UA-1352-01_GreenCityUser21 -Dsonar.organization=greencity-ua-1352-01 -Dsonar.host.url=https://sonarcloud.io -Dsonar.sources='src/main/java/greencity' -Dsonar.binaries=target/classes -Dsonar.dynamicAnalysis=reuseReports
+          mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install
+
+#      - name: SonarCloud CI Analysis
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_USER }}
+#        run: |
+#          mvn sonar:sonar \
+#            -Dsonar.projectKey=GreenCity-UA-1352-01_GreenCityUser21 \
+#            -Dsonar.organization=greencity-ua-1352-01 \
+#            -Dsonar.host.url=https://sonarcloud.io \
+#            -Dsonar.sources='src/main/java/greencity' \
+#            -Dsonar.binaries=target/classes \
+#            -Dsonar.dynamicAnalysis=reuseReports
         # Checks-out your greencity.repository under $GITHUB_WORKSPACE, so your job can access it
       
       - name: Test Reporter

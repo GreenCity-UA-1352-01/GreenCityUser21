@@ -297,7 +297,7 @@ public class UserServiceImpl implements UserService {
 
     private User findUserById(Long id) {
         return userRepo.findById(id)
-            .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND_BY_ID + id));
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND_BY_ID));
     }
 
     private void checkIfUserCanUpdate(User user, String email) {

@@ -455,7 +455,8 @@ public class UserController {
     public ResponseEntity<PageableAdvancedDto<UserManagementDto>> findUserForManagementByPage(
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size){
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+        System.out.println(pageable.getSort());
         return ResponseEntity.status(HttpStatus.OK).body(userService.findUserForManagementByPage(pageable));
     }
 

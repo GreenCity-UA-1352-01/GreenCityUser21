@@ -134,7 +134,6 @@ public class SecurityConfig {
                                 "/user/shopping-list-items/habits/{habitId}/shopping-list",
                                 "/user/{userId}/{habitId}/custom-shopping-list-items/available",
                                 "/user/{userId}/profile/", "/user/isOnline/{userId}/",
-                                "/user/{userId}/profileStatistics/",
                                 "/user/userAndSixFriendsWithOnlineStatus",
                                 "/user/userAndAllFriendsWithOnlineStatus",
                                 "/user/findByIdForAchievement",
@@ -218,7 +217,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.PUT, "/user/user-rating")
                         .hasAnyRole(ADMIN, MODERATOR, EMPLOYEE, UBS_EMPLOYEE, USER)
-                        .anyRequest().hasAnyRole(ADMIN));
+                        .anyRequest().hasAnyRole(ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/user/{userId}/profileStatistics/").denyAll());
         return http.build();
     }
 

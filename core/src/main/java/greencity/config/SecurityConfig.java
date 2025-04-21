@@ -217,8 +217,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.PUT, "/user/user-rating")
                         .hasAnyRole(ADMIN, MODERATOR, EMPLOYEE, UBS_EMPLOYEE, USER)
-                        .anyRequest().hasAnyRole(ADMIN)
-                        .requestMatchers(HttpMethod.GET, "/user/{userId}/profileStatistics/").denyAll());
+                        .requestMatchers(HttpMethod.GET, "/user/{userId}/profileStatistics/").denyAll()
+                        .anyRequest().hasAnyRole(ADMIN));
         return http.build();
     }
 

@@ -58,7 +58,7 @@ public class EmailController {
      * @author Taras Kavkalo
      */
     @PostMapping("/changePlaceStatus")
-    public ResponseEntity<Object> changePlaceStatus(@RequestBody SendChangePlaceStatusEmailMessage message) {
+    public ResponseEntity<Object> changePlaceStatus(@Valid @RequestBody SendChangePlaceStatusEmailMessage message) {
         emailService.sendChangePlaceStatusEmail(message.getAuthorFirstName(), message.getPlaceName(),
             message.getPlaceStatus(), message.getAuthorEmail());
         return ResponseEntity.status(HttpStatus.OK).build();

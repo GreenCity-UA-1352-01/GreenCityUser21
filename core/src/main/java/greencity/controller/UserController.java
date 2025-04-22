@@ -493,10 +493,11 @@ public class UserController {
      * @author Orest Mamchuk
      */
     @Operation(summary = "update via UserManagement")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
+
+    @ApiResponses({
             @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
-            @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND)
+            @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN),
+
     })
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)

@@ -171,6 +171,9 @@ public class SecurityConfig {
                                 "/user/employee-email")
                         .hasAnyRole(USER, ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)
                         .requestMatchers(HttpMethod.PUT,
+                                "/user/*")
+                        .hasRole(ADMIN)
+                        .requestMatchers(HttpMethod.PUT,
                                 "/user/edit-authorities",
                                 "/user/authorities",
                                 "/user/deactivate-employee",

@@ -19,10 +19,12 @@ import greencity.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -157,10 +159,19 @@ public class UserController {
      */
     @Operation(summary = "Get all available email notifications statuses")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = HttpStatuses.OK,
-            content = @Content(schema = @Schema(implementation = EmailNotification[].class))),
-        @ApiResponse(responseCode = "303", description = HttpStatuses.SEE_OTHER),
-        @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST)
+            @ApiResponse(responseCode = "200", description = HttpStatuses.OK,
+                    content = @Content(schema = @Schema(implementation = EmailNotification[].class),
+                    examples = @ExampleObject(value = """
+            [
+              "DISABLED",
+              "IMMEDIATELY",
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY"
+            ]
+            """))),
+            @ApiResponse(responseCode = "303", description = HttpStatuses.SEE_OTHER),
+            @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST)
     })
     @GetMapping("emailNotifications")
     public ResponseEntity<List<EmailNotification>> getEmailNotifications() {
@@ -312,7 +323,7 @@ public class UserController {
     })
     @PatchMapping(path = "/deleteProfilePicture")
     public ResponseEntity<HttpStatus> deleteUserProfilePicture(
-        @ApiIgnore @AuthenticationPrincipal Principal principal) {
+        @ApiIgnore Principal principal) {
         String email = principal.getName();
         userService.deleteUserProfilePicture(email);
         return ResponseEntity.status(HttpStatus.OK).build();
@@ -410,9 +421,10 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
         @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
         @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
+        @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND),
     })
     @GetMapping("/findByEmail")
-    public ResponseEntity<UserVO> findByEmail(@RequestParam String email) {
+    public ResponseEntity<UserVO> findByEmail(@RequestParam @Email String email) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.findByEmail(email));
     }
 
@@ -481,9 +493,11 @@ public class UserController {
      * @author Orest Mamchuk
      */
     @Operation(summary = "update via UserManagement")
+
     @ApiResponses({
             @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
             @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN),
+
     })
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
@@ -580,7 +594,8 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
         @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
         @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
-        @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
+        @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN),
+        @ApiResponse(responseCode = "404", description = HttpStatuses.NOT_FOUND)
     })
     @PutMapping("/deactivate")
     public ResponseEntity<ResponseEntity.BodyBuilder> deactivateUser(@RequestParam Long id,
@@ -600,12 +615,12 @@ public class UserController {
      */
     @Operation(summary = "Get the current User language")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
-        @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
-        @ApiResponse(responseCode = "403", description = HttpStatuses.FORBIDDEN)
+            @ApiResponse(responseCode = "200", description = HttpStatuses.OK),
+            @ApiResponse(responseCode = "400", description = HttpStatuses.BAD_REQUEST),
+            @ApiResponse(responseCode = "401", description = HttpStatuses.UNAUTHORIZED),
     })
     @GetMapping("/lang")
-    public ResponseEntity<String> getUserLang(@ApiIgnore @CurrentUser UserVO userVO) {
+    public ResponseEntity<String> getUserLang(@Parameter(hidden = true) @CurrentUser UserVO userVO) {
         return ResponseEntity.status(HttpStatus.OK).body(userVO.getLanguageVO().getCode());
     }
 

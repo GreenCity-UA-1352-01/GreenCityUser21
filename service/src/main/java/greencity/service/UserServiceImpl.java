@@ -31,6 +31,7 @@ import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -105,21 +106,25 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public PageableAdvancedDto<UserManagementDto> findUserForManagementByPage(Pageable pageable) {
-        Page<User> users = userRepo.findAll(pageable);
-        List<UserManagementDto> userManagementDtos =
-            users.getContent().stream()
-                .map(user -> modelMapper.map(user, UserManagementDto.class))
-                .collect(Collectors.toList());
-        return new PageableAdvancedDto<>(
-            userManagementDtos,
-            users.getTotalElements(),
-            users.getPageable().getPageNumber(),
-            users.getTotalPages(),
-            users.getNumber(),
-            users.hasPrevious(),
-            users.hasNext(),
-            users.isFirst(),
-            users.isLast());
+        try {
+            Page<User> users = userRepo.findAll(pageable);
+            List<UserManagementDto> userManagementDtos =
+                    users.getContent().stream()
+                            .map(user -> modelMapper.map(user, UserManagementDto.class))
+                            .collect(Collectors.toList());
+            return new PageableAdvancedDto<>(
+                    userManagementDtos,
+                    users.getTotalElements(),
+                    users.getPageable().getPageNumber(),
+                    users.getTotalPages(),
+                    users.getNumber(),
+                    users.hasPrevious(),
+                    users.hasNext(),
+                    users.isFirst(),
+                    users.isLast());
+        } catch (PropertyReferenceException e) {
+            throw new BadRequestException(e.getMessage());
+        }
     }
 
     /**
@@ -161,8 +166,9 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserVO findByEmail(String email) {
-        Optional<User> optionalUser = userRepo.findByEmail(email);
-        return optionalUser.isEmpty() ? null : modelMapper.map(optionalUser.get(), UserVO.class);
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND_BY_EMAIL + email));
+        return modelMapper.map(user, UserVO.class);
     }
 
     /**

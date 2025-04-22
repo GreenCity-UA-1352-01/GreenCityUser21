@@ -117,7 +117,7 @@ public class SecurityConfig {
                                 "/ownSecurity/restorePassword",
                                 "/googleSecurity",
                                 "/facebookSecurity/generateFacebookAuthorizeURL",
-                                "/facebookSecurity/facebook", "/user/emailNotifications",
+                                "/facebookSecurity/facebook",
                                 "/user/activatedUsersAmount",
                                 "/user/{userId}/habit/assign",
                                 "/token",
@@ -170,6 +170,9 @@ public class SecurityConfig {
                                 "/user/language/{languageId}",
                                 "/user/employee-email")
                         .hasAnyRole(USER, ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)
+                        .requestMatchers(HttpMethod.PUT,
+                                "/user/*")
+                        .hasRole(ADMIN)
                         .requestMatchers(HttpMethod.PUT,
                                 "/user/edit-authorities",
                                 "/user/authorities",

@@ -84,7 +84,11 @@ public class EmailServiceImpl implements EmailService {
         model.put(EmailConstants.STATUS, placeStatus);
 
         String template = createEmailTemplate(model, EmailConstants.CHANGE_PLACE_STATUS_EMAIL_PAGE);
-        sendEmail(authorEmail, EmailConstants.GC_CONTRIBUTORS, template);
+        NotificationDto notification = NotificationDto.builder()
+                .title(EmailConstants.GC_CONTRIBUTORS)
+                .body(template)
+                .build();
+        sendNotificationByEmail(notification, authorEmail);
     }
 
     @Override
@@ -125,6 +129,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendCreatedNewsForAuthor(EcoNewsForSendEmailDto newDto) {
+        String authorEmail = newDto.getAuthor().getEmail();
+        userRepo.findByEmail(authorEmail)
+                .orElseThrow(() -> new NotFoundException("User with email " + authorEmail + " not found"));
         Map<String, Object> model = new HashMap<>();
         model.put(EmailConstants.ECO_NEWS_LINK, ecoNewsLink);
         model.put(EmailConstants.NEWS_RESULT, newDto);
@@ -246,7 +253,11 @@ public class EmailServiceImpl implements EmailService {
     public void sendHabitNotification(String name, String email) {
         String subject = "Notification about not marked habits";
         String content = "Dear " + name + ", you haven't marked any habit during last 3 days";
-        sendEmail(email, subject, content);
+        NotificationDto notification = NotificationDto.builder()
+            .title(subject)
+            .body(content)
+            .build();
+        sendNotificationByEmail(notification, email);
     }
 
     @Override

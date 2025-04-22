@@ -27,10 +27,10 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.*;
 import java.util.concurrent.Executors;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 class EmailServiceImplTest {
@@ -58,12 +58,29 @@ class EmailServiceImplTest {
     }
 
     @Test
+    void sendChangePlaceStatusEmailTest_withInvalidEmail() {
+        String authorFirstName = "test author first name";
+        String placeName = "test place name";
+        String placeStatus = "test place status";
+        String authorEmail = "test author email";
+        assertThrows(NotFoundException.class, () ->
+                service.sendChangePlaceStatusEmail(authorFirstName, placeName, placeStatus, authorEmail)
+        );
+        verify(javaMailSender, never()).createMimeMessage();
+    }
+
+    @Test
     void sendChangePlaceStatusEmailTest() {
         String authorFirstName = "test author first name";
         String placeName = "test place name";
         String placeStatus = "test place status";
         String authorEmail = "test author email";
-        service.sendChangePlaceStatusEmail(authorFirstName, placeName, placeStatus, authorEmail);
+
+        when(userRepo.findByEmail(authorEmail)).thenReturn(Optional.of(new User()));
+
+        assertDoesNotThrow(() ->
+                service.sendChangePlaceStatusEmail(authorFirstName, placeName, placeStatus, authorEmail)
+        );
         verify(javaMailSender).createMimeMessage();
     }
 
@@ -138,8 +155,9 @@ class EmailServiceImplTest {
 
     @Test
     void sendHabitNotification() {
-        service.sendHabitNotification("userName", "userEmail");
-        verify(javaMailSender).createMimeMessage();
+        assertThrows(NotFoundException.class, () ->
+                service.sendHabitNotification("userName", "userEmail"));
+        verify(javaMailSender, never()).createMimeMessage();
     }
 
     @Test

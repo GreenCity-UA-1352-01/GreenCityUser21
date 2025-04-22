@@ -155,8 +155,9 @@ class EmailServiceImplTest {
 
     @Test
     void sendHabitNotification() {
-        service.sendHabitNotification("userName", "userEmail");
-        verify(javaMailSender).createMimeMessage();
+        assertThrows(NotFoundException.class, () ->
+                service.sendHabitNotification("userName", "userEmail"));
+        verify(javaMailSender, never()).createMimeMessage();
     }
 
     @Test

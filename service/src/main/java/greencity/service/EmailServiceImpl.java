@@ -129,6 +129,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendCreatedNewsForAuthor(EcoNewsForSendEmailDto newDto) {
+        String authorEmail = newDto.getAuthor().getEmail();
+        userRepo.findByEmail(authorEmail)
+                .orElseThrow(() -> new NotFoundException("User with email " + authorEmail + " not found"));
         Map<String, Object> model = new HashMap<>();
         model.put(EmailConstants.ECO_NEWS_LINK, ecoNewsLink);
         model.put(EmailConstants.NEWS_RESULT, newDto);

@@ -12,11 +12,13 @@ import greencity.dto.place.PlaceNotificationDto;
 import greencity.dto.user.PlaceAuthorDto;
 import greencity.dto.user.UserActivationDto;
 import greencity.dto.user.UserDeactivationReasonDto;
+import greencity.dto.user.UserVO;
 import greencity.dto.violation.UserViolationMailDto;
 import greencity.exception.exceptions.NotFoundException;
 import greencity.repository.UserRepo;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -50,7 +52,9 @@ public class EmailServiceImpl implements EmailService {
     private final String ecoNewsLink;
     private final String serverLink;
     private final String senderEmailAddress;
+    private final UserServiceImpl userServiceImpl;
     private static final String PARAM_USER_ID = "&user_id=";
+
 
     /**
      * Constructor.
@@ -63,7 +67,7 @@ public class EmailServiceImpl implements EmailService {
                             @Value("${client.address}") String clientLink,
                             @Value("${econews.address}") String ecoNewsLink,
                             @Value("${address}") String serverLink,
-                            @Value("${sender.email.address}") String senderEmailAddress) {
+                            @Value("${sender.email.address}") String senderEmailAddress, UserServiceImpl userServiceImpl) {
         this.javaMailSender = javaMailSender;
         this.templateEngine = templateEngine;
         this.userRepo = userRepo;
@@ -72,6 +76,7 @@ public class EmailServiceImpl implements EmailService {
         this.ecoNewsLink = ecoNewsLink;
         this.serverLink = serverLink;
         this.senderEmailAddress = senderEmailAddress;
+        this.userServiceImpl = userServiceImpl;
     }
 
     @Override
@@ -252,6 +257,11 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendHabitNotification(String name, String email) {
+        UserVO userVO = userServiceImpl.findByEmail(email);
+        if (userVO == null) {
+            throw new EntityNotFoundException("User with email " + email + " not found");
+        }
+
         String subject = "Notification about not marked habits";
         String content = "Dear " + name + ", you haven't marked any habit during last 3 days";
         NotificationDto notification = NotificationDto.builder()

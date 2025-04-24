@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.util.Map;
 
 @RestController
@@ -32,7 +33,13 @@ public class GoogleSecurityController {
                         "&prompt=consent",
                 "",
                 "");
-        return ResponseEntity.ok(Map.of("googleAuthUrl", googleAuthUrl));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(googleAuthUrl));
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .headers(headers)
+                .build();
     }
 
     @GetMapping ("/callback")

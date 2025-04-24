@@ -315,14 +315,15 @@ public class UserServiceImpl implements UserService {
     /**
      * {@inheritDoc}
      */
+    @Transactional
     @Override
     public UserStatusDto updateStatus(Long id, UserStatus userStatus, String email) {
         checkUpdatableUser(id, email);
         accessForUpdateUserStatus(id, email);
-        UserVO userVO = findById(id);
-        userVO.setUserStatus(userStatus);
-        User map = modelMapper.map(userVO, User.class);
-        return modelMapper.map(userRepo.save(map), UserStatusDto.class);
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND_BY_ID));
+        user.setUserStatus(userStatus);
+        return modelMapper.map(user, UserStatusDto.class);
     }
 
     /**

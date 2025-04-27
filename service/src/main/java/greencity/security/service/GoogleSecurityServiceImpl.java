@@ -129,7 +129,7 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
 
             return new SuccessSignInDto(user.getId(), accessToken, refreshToken, user.getName(), false);
         } catch (Exception e) {
-            throw new GoogleSecurityException("Google sign in failed: " + e.getMessage());
+            throw new GoogleSecurityException("Google sign-in failed", e);
         }
     }
 

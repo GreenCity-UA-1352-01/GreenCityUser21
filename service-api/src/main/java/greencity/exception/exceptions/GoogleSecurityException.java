@@ -10,4 +10,8 @@ public class GoogleSecurityException extends RuntimeException {
     public GoogleSecurityException(String message) {
         super(message);
     }
+
+    public GoogleSecurityException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -9,17 +9,20 @@ import greencity.security.dto.ownsecurity.OwnSignUpDto;
 import greencity.security.jwt.JwtTool;
 import greencity.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,8 +51,11 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
 
+    @Value("${google.oauth.client-id}")
     private String clientId;
+    @Value("${google.oauth.client-secret}")
     private String clientSecret;
+    @Value("${google.oauth.redirect-uri}")
     private String redirectUri;
 
 
@@ -60,16 +66,21 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
      */
     @Override
     public String createGoogleAuthUrl() {
-        return String.format("https://accounts.google.com/o/oauth2/v2/auth" +
-                        "?client_id=%s" +
-                        "&response_type=code" +
-                        "&scope=openid%%20email%%20profile" +
-                        "&redirect_uri=%s" +
-                        "&access_type=offline" +
-                        "&include_granted_scopes=true" +
-                        "&prompt=consent",
-                clientId,
-                redirectUri);
+
+        String scope = "openid email profile";
+        String encodedScope = URLEncoder.encode(scope, StandardCharsets.UTF_8);
+
+        return UriComponentsBuilder
+                .fromHttpUrl("https://accounts.google.com/o/oauth2/v2/auth")
+                .queryParam("client_id", clientId)
+                .queryParam("response_type", "code")
+                .queryParam("scope", encodedScope)
+                .queryParam("redirect_uri", redirectUri)
+                .queryParam("access_type", "offline")
+                .queryParam("include_granted_scopes", "true")
+                .queryParam("prompt", "consent")
+                .build(true)
+                .toUriString();
     }
 
     /**
@@ -92,7 +103,12 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
             }
 
             GoogleIdToken.Payload payload = googleIdToken.getPayload();
+
+            if (Boolean.FALSE.equals(payload.getEmailVerified())) {
+                throw new GoogleSecurityException("Google account e-mail is not verified");
+            }
             String email = payload.getEmail();
+
             String name = (String) payload.get("name");
 
             UserVO user = userService.findByEmail(email);
@@ -139,14 +155,18 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(tokenEndpoint, request, Map.class);
+        var response =
+                restTemplate.postForEntity(tokenEndpoint, request, Map.class);
 
-        Map responseBody = response.getBody();
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new GoogleSecurityException("Google token endpoint returned " + response.getStatusCode());
+        }
 
-        if (responseBody == null || !responseBody.containsKey("id_token") || responseBody.get("id_token") == null) {
+        var responseBody = response.getBody();
+        if (responseBody == null || responseBody.get("id_token") == null) {
             throw new GoogleSecurityException("Failed to retrieve ID token from Google response");
         }
 
-        return (String) response.getBody().get("id_token");
+        return (String) responseBody.get("id_token");
     }
 }

@@ -2,16 +2,13 @@ package greencity.security.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import greencity.constant.ErrorMessage;
 import greencity.dto.user.UserVO;
-import greencity.exception.exceptions.BadRefreshTokenException;
 import greencity.exception.exceptions.GoogleSecurityException;
-import greencity.security.dto.AccessRefreshTokensDto;
 import greencity.security.dto.SuccessSignInDto;
 import greencity.security.dto.ownsecurity.OwnSignUpDto;
 import greencity.security.jwt.JwtTool;
 import greencity.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,7 +23,23 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Service implementation that handles Google OAuth2 authentication logic.
+ * <p>
+ * This service is responsible for:
+ * <ul>
+ *     <li>Generating the Google OAuth2 authorization URL for user redirection.</li>
+ *     <li>Exchanging the authorization code for an ID token from Google.</li>
+ *     <li>Verifying the ID token and signing in or registering the user.</li>
+ * </ul>
+ *
+ * @author Roman Diakov
+ * @author Volodymyr Saienko
+ * @version 1.0
+ */
+
 @Service
+@RequiredArgsConstructor
 public class GoogleSecurityServiceImpl implements GoogleSecurityService {
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
     private final UserService userService;
@@ -39,27 +52,11 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
     private String clientSecret;
     private String redirectUri;
 
+
     /**
-     * Constructor.
-     */
-    @Autowired
-    public GoogleSecurityServiceImpl(GoogleIdTokenVerifier googleIdTokenVerifier,
-                                     UserService userService,
-                                     JwtTool jwtTool,
-                                     OwnSecurityService ownSecurityService,
-                                     PasswordEncoder passwordEncoder,
-                                     RestTemplate restTemplate) {
-        this.googleIdTokenVerifier = googleIdTokenVerifier;
-        this.userService = userService;
-        this.jwtTool = jwtTool;
-        this.ownSecurityService = ownSecurityService;
-        this.passwordEncoder = passwordEncoder;
-        this.restTemplate = restTemplate;
-    }
-    /**
-     * Creates Google OAuth2 authorization URL.
+     * Creates the Google OAuth2 authorization URL with required scopes and parameters.
      *
-     * @return Google authorization URL
+     * @return the authorization URL as a {@link String}
      */
     @Override
     public String createGoogleAuthUrl() {
@@ -76,10 +73,12 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
     }
 
     /**
-     * Processes Google OAuth2 callback with authorization code.
+     * Handles the OAuth2 callback from Google, verifies the ID token,
+     * registers the user if necessary, and returns authentication tokens.
      *
-     * @param code Authorization code from Google
-     * @return SuccessSignInDto with tokens
+     * @param code the authorization code received from Google
+     * @return {@link SuccessSignInDto} containing authentication tokens and user information
+     * @throws GoogleSecurityException if the ID token is invalid or exchange fails
      */
     @Transactional
     @Override
@@ -88,35 +87,43 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
             String idToken = exchangeCodeForToken(code);
             GoogleIdToken googleIdToken = googleIdTokenVerifier.verify(idToken);
 
-            if (googleIdToken != null) {
-                GoogleIdToken.Payload payload = googleIdToken.getPayload();
-                String email = payload.getEmail();
-                String name = (String) payload.get("name");
-
-                UserVO user = userService.findByEmail(email);
-
-                if (user == null) {
-                    var signUpDto = OwnSignUpDto.builder()
-                            .name(name)
-                            .email(email)
-                            .isUbs(false)
-                            .password(passwordEncoder.encode(UUID.randomUUID().toString()))
-                            .build();
-                    ownSecurityService.signUp(signUpDto, "ua");
-                    user = userService.findByEmail(email);
-                }
-
-                String accessToken = jwtTool.createAccessToken(user.getEmail(), user.getRole());
-                String refreshToken = jwtTool.createRefreshToken(user);
-
-                return new SuccessSignInDto(user.getId(), accessToken, refreshToken, user.getName(), false);
+            if (googleIdToken == null) {
+                throw new GoogleSecurityException("Invalid ID token");
             }
-            throw new GoogleSecurityException("Invalid ID token");
+
+            GoogleIdToken.Payload payload = googleIdToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+
+            UserVO user = userService.findByEmail(email);
+
+            if (user == null) {
+                var signUpDto = OwnSignUpDto.builder()
+                        .name(name)
+                        .email(email)
+                        .isUbs(false)
+                        .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                        .build();
+                ownSecurityService.signUp(signUpDto, "ua");
+                user = userService.findByEmail(email);
+            }
+
+            String accessToken = jwtTool.createAccessToken(user.getEmail(), user.getRole());
+            String refreshToken = jwtTool.createRefreshToken(user);
+
+            return new SuccessSignInDto(user.getId(), accessToken, refreshToken, user.getName(), false);
         } catch (Exception e) {
             throw new GoogleSecurityException("Google sign in failed: " + e.getMessage());
         }
     }
 
+    /**
+     * Exchanges the provided authorization code for an ID token by calling Google's token endpoint.
+     *
+     * @param code the authorization code received from Google
+     * @return the ID token as a {@link String}
+     * @throws GoogleSecurityException if the token exchange fails
+     */
     private String exchangeCodeForToken(String code) {
         String tokenEndpoint = "https://oauth2.googleapis.com/token";
 
@@ -131,7 +138,14 @@ public class GoogleSecurityServiceImpl implements GoogleSecurityService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
         ResponseEntity<Map> response = restTemplate.postForEntity(tokenEndpoint, request, Map.class);
+
+        Map responseBody = response.getBody();
+
+        if (responseBody == null || !responseBody.containsKey("id_token") || responseBody.get("id_token") == null) {
+            throw new GoogleSecurityException("Failed to retrieve ID token from Google response");
+        }
 
         return (String) response.getBody().get("id_token");
     }

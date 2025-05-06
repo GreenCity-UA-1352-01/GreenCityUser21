@@ -165,7 +165,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT,
                                 "/ownSecurity/changePassword",
                                 "/user/profile",
-                                "/user/{id}/updateUserLastActivityTime/{date}",
                                 "/user/language/{languageId}",
                                 "/user/employee-email")
                         .hasAnyRole(USER, ADMIN, UBS_EMPLOYEE, MODERATOR, EMPLOYEE)
@@ -213,6 +212,9 @@ public class SecurityConfig {
                                 "/user/status",
                                 "/user/role",
                                 "/user/update/role")
+                        .hasAnyRole(ADMIN)
+                        .requestMatchers(HttpMethod.PUT,
+                                "/user/updateUserLastActivityTime/{date}")
                         .hasAnyRole(ADMIN)
                         .requestMatchers(HttpMethod.POST, "/management/login")
                         // .not().fullyAuthenticated()
